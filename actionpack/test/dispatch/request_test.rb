@@ -905,6 +905,7 @@ class RequestParameters < BaseRequestTest
     request.expects(:request_parameters).at_least_once.returns({ "foo" => 1 })
     request.expects(:query_parameters).at_least_once.returns({ "bar" => 2 })
 
+    assert request.params_readable?
     assert_equal({"foo" => 1, "bar" => 2}, request.parameters)
     assert_equal({"foo" => 1}, request.request_parameters)
     assert_equal({"bar" => 2}, request.query_parameters)
@@ -919,6 +920,8 @@ class RequestParameters < BaseRequestTest
         request.parameters
       end
     end
+
+    assert_not request.params_readable?
   end
 
   test "parameters not accessible after rack parse error of invalid UTF8 character" do
@@ -930,6 +933,8 @@ class RequestParameters < BaseRequestTest
         request.parameters
       end
     end
+
+    assert_not request.params_readable?
   end
 
   test "parameters not accessible after rack parse error 1" do
@@ -944,6 +949,8 @@ class RequestParameters < BaseRequestTest
       # rack will raise a Rack::Utils::ParameterTypeError when parsing this query string
       request.parameters
     end
+
+    assert_not request.params_readable?
   end
 
   test "we have access to the original exception" do

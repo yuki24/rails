@@ -55,13 +55,7 @@ module ActionDispatch
 
       def formats
         @env["action_dispatch.request.formats"] ||= begin
-          params_readable = begin
-                              parameters[:format]
-                            rescue ActionController::BadRequest
-                              false
-                            end
-
-          if params_readable
+          if params_readable? && parameters[:format]
             Array(Mime[parameters[:format]])
           elsif use_accept_header && valid_accept_header
             accepts

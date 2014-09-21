@@ -40,6 +40,12 @@ module ActionDispatch
         @env[PARAMETERS_KEY] ||= {}
       end
 
+      def params_readable?
+        !!parameters
+      rescue ActionController::BadRequest
+        false
+      end
+
     private
 
       # Convert nested Hash to HashWithIndifferentAccess.
