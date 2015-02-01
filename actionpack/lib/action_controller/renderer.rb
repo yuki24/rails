@@ -64,11 +64,114 @@ module ActionController
     end
 
     # Render templates with any options from ActionController::Base#render_to_string.
-    def render(*args)
+    def slow_render(*args)
       raise 'missing controller' unless controller?
 
       instance = controller.build_with_env(env)
       instance.render_to_string(*args)
+    end
+
+    RENDER_FORMATS_IN_PRIORITY = [:body, :text, :plain, :html]
+
+    def render(*args)
+      raise 'missing controller' unless controller?
+
+      instance = controller.build_with_env(env)
+      action   = args.first
+      options  = args.extract_options!
+
+      # AcstractController::Rendering#_normalize_args
+      #   rails/actionpack/lib/abstract_controller/rendering.rb:80
+      options = if action.is_a? Hash
+        action
+      else
+        options
+      end
+
+      # ActionView::Rendering#_normalize_args
+      #   rails/actionview/lib/action_view/rendering.rb:116
+      case action
+      when NilClass
+      when Hash
+        options = action
+      when String, Symbol
+        action = action.to_s
+        key = action.include?(?/) ? :template : :action
+        options[key] = action
+      else
+        options[:partial] = action
+      end
+
+      # ActionController::Rendering#_normalize_args
+      #   rails/actionpack/lib/action_controller/metal/rendering.rb:67
+      options[:update] = blk if block_given? # invalid as #render doesn't take blocks.
+
+      # AbstractController::Rendering#_normalize_render
+      #   rails/actionpack/lib/abstract_controller/rendering.rb:107
+      if defined?(request) && request && request.variant.present?
+        options[:variant] = request.variant
+      end
+
+      # ActionController::Rendering#_normalize_text
+      #   rails/actionpack/lib/action_controller/metal/rendering.rb:92
+      RENDER_FORMATS_IN_PRIORITY.each do |format|
+        if options.key?(format) && options[format].respond_to?(:to_text)
+          options[format] = options[format].to_text
+        end
+      end
+
+      # ActionController::Rendering#_normalize_options
+      #   rails/actionpack/lib/action_controller/metal/rendering.rb:74
+      if options[:html]
+        options[:html] = ERB::Util.html_escape(options[:html])
+      end
+
+      if options.delete(:nothing) # `render nothing: true` doesn't make sense.
+        options[:body] = nil
+      end
+
+      if options[:status] # no need to set status.
+        options[:status] = Rack::Utils.status_code(options[:status])
+      end
+
+      # AcstractController::Rendering#_normalize_options
+      #   rails/actionpack/lib/abstract_controller/rendering.rb:90
+      options = options
+
+      # ActionView::Rendering#_normalize_options
+      #   rails/actionview/lib/action_view/rendering.rb:136
+      if options[:partial] == true
+        options[:partial] = instance.action_name # #action_name always returns nil.
+      end
+
+      if (options.keys & [:partial, :file, :template]).empty?
+        options[:prefixes] ||= instance._prefixes
+      end
+
+      options[:template] ||= (options[:action] || instance.action_name).to_s
+
+      # ActionView::Layouts#_normalize_options
+      #   rails/actionview/lib/action_view/layouts.rb:342
+      if (options.keys & [:body, :text, :plain, :html, :inline, :partial]).empty? || options.key?(:layout)
+        layout = options.delete(:layout) { :default }
+
+        # ActionView::Layouts#_layout_for_option
+        #   rails/actionview/lib/action_view/layouts.rb:381
+        name = case layout
+               when String     then (layout.is_a?(String) && layout !~ /\blayouts/ ? "layouts/#{layout}" : layout)
+               when Proc       then layout
+               when true       then Proc.new { instance.send(:_default_layout, true)  }
+               when :default   then Proc.new { instance.send(:_default_layout, false) }
+               when false, nil then nil
+               else
+                 raise ArgumentError,
+                 "String, Proc, :default, true, or false, expected for `layout'; you passed #{layout.inspect}"
+               end
+
+        options[:layout] = name
+      end
+
+      instance.render_to_body(options)
     end
 
     private
