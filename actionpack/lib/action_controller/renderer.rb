@@ -117,21 +117,22 @@ module ActionController
 
       # ActionController::Rendering#_normalize_text
       #   rails/actionpack/lib/action_controller/metal/rendering.rb:92
-      RENDER_FORMATS_IN_PRIORITY.each do |format|
-        if options.key?(format) && options[format].respond_to?(:to_text)
-          options[format] = options[format].to_text
-        end
-      end
+      #RENDER_FORMATS_IN_PRIORITY.each do |format|
+      #  if options.key?(format) && options[format].respond_to?(:to_text)
+      #    options[format] = options[format].to_text
+      #  end
+      #end
 
       # ActionController::Rendering#_normalize_options
       #   rails/actionpack/lib/action_controller/metal/rendering.rb:74
-      if options[:html]
-        options[:html] = ERB::Util.html_escape(options[:html])
-      end
+      #if options[:html]
+      #  options[:html] = ERB::Util.html_escape(options[:html])
+      #end
 
-      if options.delete(:nothing) # `render nothing: true` doesn't make sense.
-        options[:body] = nil
-      end
+      # `render nothing: true` doesn't make sense.
+      #if options.delete(:nothing)
+      #  options[:body] = nil
+      #end
 
       # no need to set status.
       #if options[:status]
@@ -153,11 +154,11 @@ module ActionController
         options[:prefixes] ||= instance._prefixes
       end
 
-      options[:template] ||= (options[:action] || instance.action_name).to_s
+      options[:template] ||= options[:action].to_s
 
       # ActionView::Layouts#_normalize_options
       #   rails/actionview/lib/action_view/layouts.rb:342
-      if (options.keys & [:body, :text, :plain, :html, :inline, :partial]).empty? || options.key?(:layout)
+      if (options.keys & [:inline, :partial]).empty? || options.key?(:layout)
         layout = options.delete(:layout) { :default }
 
         # ActionView::Layouts#_layout_for_option
