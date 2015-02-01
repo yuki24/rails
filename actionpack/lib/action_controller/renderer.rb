@@ -82,11 +82,13 @@ module ActionController
 
       # AcstractController::Rendering#_normalize_args
       #   rails/actionpack/lib/abstract_controller/rendering.rb:80
-      options = if action.is_a? Hash
-        action
-      else
-        options
-      end
+
+      # ActionView::Rendering#_normalize_args does the same already.
+      #options = if action.is_a? Hash
+      #  action
+      #else
+      #  options
+      #end
 
       # ActionView::Rendering#_normalize_args
       #   rails/actionview/lib/action_view/rendering.rb:116
@@ -104,7 +106,8 @@ module ActionController
 
       # ActionController::Rendering#_normalize_args
       #   rails/actionpack/lib/action_controller/metal/rendering.rb:67
-      options[:update] = blk if block_given? # invalid as #render doesn't take blocks.
+      # invalid as #render doesn't take blocks.
+      # options[:update] = blk if block_given?
 
       # AbstractController::Rendering#_normalize_render
       #   rails/actionpack/lib/abstract_controller/rendering.rb:107
@@ -130,19 +133,21 @@ module ActionController
         options[:body] = nil
       end
 
-      if options[:status] # no need to set status.
-        options[:status] = Rack::Utils.status_code(options[:status])
-      end
+      # no need to set status.
+      #if options[:status]
+      #  options[:status] = Rack::Utils.status_code(options[:status])
+      #end
 
       # AcstractController::Rendering#_normalize_options
       #   rails/actionpack/lib/abstract_controller/rendering.rb:90
-      options = options
+      #options = options
 
       # ActionView::Rendering#_normalize_options
       #   rails/actionview/lib/action_view/rendering.rb:136
-      if options[:partial] == true
-        options[:partial] = instance.action_name # #action_name always returns nil.
-      end
+      # :partial option won't work as #action_name always returns nil.
+      #if options[:partial] == true
+      #  options[:partial] = instance.action_name
+      #end
 
       if (options.keys & [:partial, :file, :template]).empty?
         options[:prefixes] ||= instance._prefixes
