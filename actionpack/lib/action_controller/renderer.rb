@@ -71,7 +71,8 @@ module ActionController
       instance.render_to_string(*args)
     end
 
-    RENDER_FORMATS_IN_PRIORITY = [:body, :text, :plain, :html]
+    TEMPLATE_TYPES = [:partial, :file, :template].freeze
+    PARTIAL_TYPES  = [:inline, :partial].freeze
 
     def render(*args)
       raise 'missing controller' unless controller?
@@ -93,7 +94,6 @@ module ActionController
       # ActionView::Rendering#_normalize_args
       #   rails/actionview/lib/action_view/rendering.rb:116
       case action
-      when NilClass
       when Hash
         options = action
       when String, Symbol
@@ -150,7 +150,7 @@ module ActionController
       #  options[:partial] = instance.action_name
       #end
 
-      if (options.keys & [:partial, :file, :template]).empty?
+      if (options.keys & TEMPLATE_TYPES).empty?
         options[:prefixes] ||= instance._prefixes
       end
 
@@ -158,7 +158,7 @@ module ActionController
 
       # ActionView::Layouts#_normalize_options
       #   rails/actionview/lib/action_view/layouts.rb:342
-      if (options.keys & [:inline, :partial]).empty? || options.key?(:layout)
+      if (options.keys & PARTIAL_TYPES).empty? || options.key?(:layout)
         layout = options.delete(:layout) { :default }
 
         # ActionView::Layouts#_layout_for_option
