@@ -80,6 +80,28 @@ class RendererTest < ActiveSupport::TestCase
     assert_equal xml,  render['respond_to/using_defaults', formats: :xml]
   end
 
+  test 'rendering with layouts' do
+    html    = '<html>Hello world!</html>'
+    assigns = {variable_for_layout: ''}
+
+    assert_equal html, render['respond_to/using_defaults', layout: 'standard', assigns: assigns]
+    assert_equal html, render['respond_to/using_defaults', layout: 'layouts/standard', assigns: assigns]
+  end
+
+  test 'rendering with partials' do
+    assert_equal 'partial html', render[partial: 'test/partial']
+  end
+
+  test 'rendering with actions' do
+    renderer = CommentsController.renderer
+
+    assert_equal 'Comment index', renderer.render(action: :index)
+  end
+
+  test 'rendering with variants' do
+    assert_equal 'tablet', render['respond_to/variant_any_implicit_render.html', variant: :tablet]
+  end
+
   test 'rendering with helpers' do
     assert_equal "<p>1\n<br />2</p>", render[inline: '<%= simple_format "1\n2" %>']
   end
