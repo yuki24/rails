@@ -77,9 +77,9 @@ module ActionController
     def render(*args)
       raise 'missing controller' unless controller?
 
-      instance = controller.build_with_env(env)
-      action   = args.first
-      options  = args.extract_options!
+      @instance ||= controller.build_with_env(env)
+      action    = args.first
+      options   = args.extract_options!
 
       # AcstractController::Rendering#_normalize_args
       #   rails/actionpack/lib/abstract_controller/rendering.rb:80
@@ -111,9 +111,10 @@ module ActionController
 
       # AbstractController::Rendering#_normalize_render
       #   rails/actionpack/lib/abstract_controller/rendering.rb:107
-      if defined?(request) && request && request.variant.present?
-        options[:variant] = request.variant
-      end
+      # variant doesn't work this way.
+      #if @instance.request.variant.present?
+      #  options[:variant] = @instance.request.variant
+      #end
 
       # ActionController::Rendering#_normalize_text
       #   rails/actionpack/lib/action_controller/metal/rendering.rb:92
@@ -147,11 +148,11 @@ module ActionController
       #   rails/actionview/lib/action_view/rendering.rb:136
       # :partial option won't work as #action_name always returns nil.
       #if options[:partial] == true
-      #  options[:partial] = instance.action_name
+      #  options[:partial] = @instance.action_name
       #end
 
       if (options.keys & TEMPLATE_TYPES).empty?
-        options[:prefixes] ||= instance._prefixes
+        options[:prefixes] ||= @instance._prefixes
       end
 
       options[:template] ||= options[:action].to_s
@@ -163,22 +164,21 @@ module ActionController
 
         # ActionView::Layouts#_layout_for_option
         #   rails/actionview/lib/action_view/layouts.rb:381
-        name = case layout
-               when String     then (layout.is_a?(String) && layout !~ /\blayouts/ ? "layouts/#{layout}" : layout)
-               when Proc       then layout
-               when true       then Proc.new { instance.send(:_default_layout, true)  }
-               when :default   then Proc.new { instance.send(:_default_layout, false) }
-               when false, nil then nil
-               else
-                 raise ArgumentError,
-                 "String, Proc, :default, true, or false, expected for `layout'; you passed #{layout.inspect}"
-               end
-
-        options[:layout] = name
+        options[:layout] = case layout
+                           when String     then (layout.is_a?(String) && layout !~ /\blayouts/ ? "layouts/#{layout}" : layout)
+                           when Proc       then layout
+                           when true       then Proc.new { @instance.send(:_default_layout, true)  }
+                           when :default   then Proc.new { byebug; 1; @instance.send(:_default_layout, false) }
+                           when false, nil then nil
+                           else
+                             raise ArgumentError,
+                             "String, Proc, :default, true, or false, expected for `layout'; you passed #{layout.inspect}"
+                           end
       end
 
-      instance.render_to_body(options)
+      @instance.render_to_body(options)
     end
+    require 'byebug'
 
     private
       def normalize_keys(env)
