@@ -12,5 +12,29 @@
 
   <%= render template: "rescues/_source" %>
   <%= render template: "rescues/_trace" %>
+
+  <% if @exception.cause %>
+    <h3>Nested Exceptions</h3>
+  <% end %>
+
+  <% while error = (error || @exception).cause %>
+    <div class="details">
+      <div class="summary">
+        <a href="#" onclick="return toggle(<%= error.object_id %>)"><%= error.class.name %>: <%= h error.message %></a>
+      </div>
+
+      <% wrapper = ActionDispatch::ExceptionWrapper.new(@request.get_header("action_dispatch.backtrace_cleaner"), error) %>
+      <% @traces = wrapper.traces %>
+      <% @source_extracts = wrapper.source_extracts %>
+      <% @line_number = wrapper.line_number %>
+      <% @file = wrapper.file %>
+    </div>
+
+    <div id="<%= error.object_id %>" style="display: none;">
+      <%= render template: "rescues/_source" %>
+      <%= render template: "rescues/_trace" %>
+    </div>
+  <% end %>
+
   <%= render template: "rescues/_request_and_response" %>
 </div>
