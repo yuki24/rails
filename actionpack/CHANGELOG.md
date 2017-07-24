@@ -1,3 +1,7 @@
+*   Add a method to determine if query parameters are parsable
+
+    *Christina Thompson*
+
 *   Changed the system tests to set Puma as default server only when the
     user haven't specified manually another server.
 
