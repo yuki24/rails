@@ -536,6 +536,12 @@ module ActiveSupport #:nodoc:
       end
 
       name_error = NameError.new("uninitialized constant #{qualified_name}", const_name)
+      name_error.instance_variable_set(:@receiver, from_mod)
+
+      def name_error.receiver
+        @receiver
+      end
+
       name_error.set_backtrace(caller.reject { |l| l.starts_with? __FILE__ })
       raise name_error
     end

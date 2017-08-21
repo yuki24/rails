@@ -202,6 +202,19 @@ class DependenciesTest < ActiveSupport::TestCase
     end
   end
 
+  def test_name_error_receiver_works
+    with_autoloading_fixtures do
+      error = assert_raise(NameError) { Stirng }
+      assert_equal Object, error.receiver
+
+      assert_raise(NameError) { NoModule::DoesNotExist }
+      assert_equal Object, error.receiver
+
+      error = assert_raise(NameError) { A::Stirng }
+      assert_equal A, error.receiver
+    end
+  end
+
   def test_directories_manifest_as_modules_unless_const_defined
     with_autoloading_fixtures do
       assert_kind_of Module, ModuleFolder
