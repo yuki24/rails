@@ -1,3 +1,7 @@
+*   Fixes a bug where the DebugExceptions middleware fails to show the debug page when the query string is malformed
+
+    *Yuki Nishijima*
+
 *   Add a method to determine if query parameters are parsable
 
     *Christina Thompson*
